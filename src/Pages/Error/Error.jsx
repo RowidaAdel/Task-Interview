@@ -1,7 +1,7 @@
 import { Link } from "react-router";
-import notFound from "../../assets/images/error.png"
+import notFound from "../../assets/Images/error.png"
 import { useEffect } from "react";
-import { MessageCircle, House, Mail, Phone, Search } from "lucide-react";
+import { House } from "lucide-react";
 ;
 import { Helmet } from "react-helmet";
 
