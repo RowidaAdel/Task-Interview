@@ -1,150 +1,138 @@
-import React from "react";
-import { CircleX, Trash, ShoppingCart } from "lucide-react";
-import animationData from "../../assets/Images/zeroPurchase.json";
-import AnimatedSVG from "../../Components/AnimatedSVG/AnimatedSVG";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
 import Loading from "../../Components/Loading/Loading";
+import { CircleX, Trash, ShoppingCart } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useCart } from "../../Context/cartContext";
+import AnimatedSVG from "../../Components/AnimatedSVG/AnimatedSVG";
+import animationData from "../../assets/Images/zeroPurchase.json";
 
 export default function Cart() {
-  const { cart, removeItemcart, clearCart, updateCartItem, loading, disabled } = useCart();
+  const {
+    cart,
+    loading,
+    disabled,
+    removeItemcart,
+    clearCart,
+    updateCartItem,
+    getLogedCart,
+  } = useCart();
+
+  useEffect(() => {
+    getLogedCart();
+  }, []);
 
   if (loading) return <Loading />;
 
-  const safeCart = Array.isArray(cart) ? cart : [];
-
-  const total = safeCart.reduce((acc, item) => {
-    if (item.product && typeof item.product.price === "number") {
-      return acc + item.product.price * item.quantity;
-    }
-    return acc;
-  }, 0);
-
-  if (safeCart.length === 0) {
+  if (!cart || cart.length === 0)
     return (
-      <div className="bg-slate-200 dark:bg-gray-800 py-10 min-h-[80vh] flex justify-center items-center">
-        <div className="flex w-11/12 lg:w-3/4 items-center justify-center flex-col lg:flex-row gap-10">
-          <div className="text-center lg:w-1/2" data-aos="fade-left">
-            <h3 className="text-2xl font-semibold text-gray-600 dark:text-gray-300 leading-relaxed">
-              Oops! Your Cart Is Empty. <br /> Start shopping now and find something you love! ❤
-            </h3>
-            <Link to="/" className="btn mt-6 inline-flex items-center gap-2 text-white text-lg bg-mainColor hover:bg-hoverColor px-6 py-3 rounded-xl transition">
-              Start Shopping <ShoppingCart />
+      <div className="min-h-screen flex flex-col justify-center items-center p-10 bg-gray-50 dark:bg-slate-700">
+        <div className="flex flex-col lg:flex-row items-center gap-10 max-w-4xl">
+          <div className="text-center lg:text-left">
+            <h2 className="text-xl font-semibold mb-6 text-gray-700 dark:text-gray-300">
+              Your Cart is Empty
+            </h2>
+            <Link
+              to="/products"
+              className="mt-4 flex items-center gap-3 bg-mainColor hover:bg-hoverColor text-white text-lg font-semibold px-8 py-3 rounded-xl shadow-lg transition"
+            >
+              <span>Browse Products</span>
+              <ShoppingCart size={30} />
             </Link>
           </div>
-          <div className="lg:w-1/2 w-full" data-aos="fade-right">
-            <AnimatedSVG animationData={animationData} />
-          </div>
+          <AnimatedSVG animationData={animationData} style={{ width: 240, height: 240 }} />
         </div>
       </div>
     );
-  }
 
-  const handleUpdate = (productId, quantity) => {
-    if (quantity < 1) return;
-    updateCartItem(productId, quantity);
-  };
+  const total = cart.reduce(
+    (acc, item) => acc + (item.product?.price || 0) * item.quantity,
+    0
+  );
 
   return (
-    <div className="bg-slate-300 dark:bg-gray-800 min-h-[80vh] py-10">
-      <div className="container mx-auto">
-        {/* Summary */}
-        <div data-aos="zoom-out" className="bg-white dark:bg-gray-700 border border-mainColor shadow-lg p-4 rounded-2xl max-w-sm mx-auto mb-8 text-center" >
-          <h3 className="text-lg font-medium text-gray-700 dark:text-gray-100">
-            <span className="text-mainColor dark:text-white me-2">💰</span>
-            Total Price:{" "}
-            <span className="text-mainColor dark:text-bgColor font-bold">
-              {total.toFixed(2)} $
-            </span>
-          </h3>
-          <h4 className="text-md mt-2 font-medium text-gray-600 dark:text-gray-300">
-            Total Items: {safeCart.length}
-          </h4>
-        </div>
-        {/* Items */}
-        <div className="cart-items mt-5 grid grid-cols-1 gap-5">
-          {safeCart.map(({ productId, product, quantity }, index) => (
-            <div data-aos={index % 2 === 0 ? "fade-right" : "fade-left"} key={productId || index}
-              className="flex flex-col md:flex-row justify-between items-center gap-6 bg-white dark:bg-gray-700 rounded-xl shadow-md p-5">
-              <div className="w-full md:w-24 h-24 rounded-md overflow-hidden flex-shrink-0 border border-gray-500">
-                {product && product.image ? (
-                  <img loading="lazy" src={product.image} alt={product.title || "Product image"} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200 dark:bg-gray-600 text-gray-500">
-                    No Image
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 w-full md:px-4 text-center md:text-left">
-                <h2 className="text-lg font-bold text-mainColor dark:text-bgColor">
-                  {product && product.title
-                    ? product.title.length > 40
-                      ? product.title.slice(0, 30) + "..."
-                      : product.title
-                    : "No Title"}
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-700 p-8">
+      <div className="max-w-5xl mx-auto bg-slate-100 dark:bg-gray-800 rounded-2xl shadow-lg p-8">
+        <h1 className="text-4xl font-bold mb-10 text-gray-800 dark:text-gray-100">
+          Your Cart
+        </h1>
+
+        <div className="space-y-6">
+          {cart.map(({ productId, product, quantity }) => (
+            <div
+              key={productId}
+              className="flex flex-col sm:flex-row items-center gap-6 border border-gray-300 dark:border-gray-700 rounded-xl p-5 shadow-sm hover:shadow-md transition"
+            >
+              <img
+                src={product?.image}
+                alt={product?.title}
+                className="w-28 h-28 object-cover rounded-lg"
+              />
+
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-mainColor dark:text-bgColor">
+                  {product?.title || "No Title"}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-300">
-                  Category :{" "}
-                  {product && product.category ? product.category : "Unknown"} |{" "}
-                  <span className="text-green-600 ml-1">Available</span>
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  Price: <span className="font-medium">${product?.price.toFixed(2)}</span>
                 </p>
-                <p className="text-sm text-amber-600 font-semibold mt-1">
-                  Rate: ⭐ 4.8
-                </p>
-                <p className="text-sm text-bgColor font-semibold mt-1">
-                  Price:{" "}
-                  {product && typeof product.price === "number"
-                    ? product.price.toFixed(2)
-                    : "N/A"}{" "}
-                  $
+                <p className="text-gray-600 dark:text-gray-400 mt-1">
+                  Category: <span className="capitalize">{product?.category || "Unknown"}</span>
                 </p>
               </div>
 
-              <div className="flex items-center justify-between flex-wrap gap-4 mt-4">
-                <div className="flex items-center border border-gray-300 dark:border-gray-600 rounded-md overflow-hidden shadow-sm">
-                  <button aria-label="decrease" onClick={() => handleUpdate(productId, quantity - 1)} disabled={quantity <= 1 || disabled}
-                    className="bg-mainColor hover:bg-hoverColor text-white px-3 py-1 transition disabled:opacity-50">
-                    −
-                  </button>
-                  <input id={`quantity-${productId}`} type="number" min="1" value={quantity} onChange={(e) =>
-                    handleUpdate(productId, Number(e.target.value))}
-                    className="w-12 text-center text-sm border-x border-gray-300 dark:border-gray-600 outline-none dark:bg-gray-700 dark:text-white" />
-                  <button aria-label="increase" onClick={() => handleUpdate(productId, quantity + 1)}
-                    disabled={disabled} className="bg-mainColor hover:bg-hoverColor text-white px-3 py-1 transition" >
-                    +
-                  </button>
-                </div>
-                <p className="text-mainColor dark:text-white font-semibold">
-                  Total:{" "}
-                  {product && typeof product.price === "number"
-                    ? (product.price * quantity).toFixed(2)
-                    : "N/A"}{" "}
-                  $
-                </p>
-                <button className="cursor-pointer group order-last max-sm:order-first p-2 rounded-full border-2 border-transparent text-gray-500 hover:text-red-600 hover:border-red-600 transition-transform duration-300 ease-in-out"
-                  onClick={() => removeItemcart(productId)} aria-label="Remove item"
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.transform = "rotate(90deg)")
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.transform = "rotate(0deg)")
-                  }
-                  onFocus={(e) =>
-                    (e.currentTarget.style.transform = "rotate(90deg)")
-                  }
-                  onBlur={(e) =>
-                    (e.currentTarget.style.transform = "rotate(0deg)")
-                  }
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() => updateCartItem(productId, quantity - 1)}
+                  disabled={quantity <= 1 || disabled}
+                  className="px-3 py-1 bg-mainColor text-white rounded-md hover:bg-hoverColor disabled:opacity-50 transition"
+                  aria-label="Decrease quantity"
                 >
-                  <CircleX size={20} />
+                  −
+                </button>
+                <input
+                  type="number"
+                  min="1"
+                  value={quantity}
+                  disabled={disabled}
+                  onChange={(e) => updateCartItem(productId, Number(e.target.value))}
+                  className="w-16 text-center border rounded-md px-2 py-1 dark:bg-gray-700 dark:text-white"
+                />
+                <button
+                  onClick={() => updateCartItem(productId, quantity + 1)}
+                  disabled={disabled}
+                  className="px-3 py-1 bg-mainColor text-white rounded-md hover:bg-hoverColor transition"
+                  aria-label="Increase quantity"
+                >
+                  +
                 </button>
               </div>
+
+              <p className="text-lg font-bold text-gray-800 dark:text-gray-100 w-24 text-center">
+                ${(product?.price * quantity).toFixed(2)}
+              </p>
+
+              <button
+                onClick={() => removeItemcart(productId)}
+                disabled={disabled}
+                className="text-red-600 hover:text-red-700 transition"
+                aria-label="Remove item"
+              >
+                <CircleX size={28} />
+              </button>
             </div>
           ))}
         </div>
-        <div className="mt-10 text-center">
-          <button onClick={clearCart} className="btn bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-xl inline-flex items-center gap-2"  >
-            <Trash />
+
+        <div className="mt-10 flex flex-col sm:flex-row justify-between items-center border-t border-gray-300 dark:border-gray-700 pt-6">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            Total: ${total.toFixed(2)}
+          </h2>
+          <button
+            onClick={clearCart}
+            disabled={disabled}
+            className="mt-4 sm:mt-0 px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold shadow-lg transition"
+          >
+            <Trash className="inline-block mr-2" size={20} />
             Clear Cart
           </button>
         </div>

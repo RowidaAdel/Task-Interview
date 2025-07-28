@@ -8,8 +8,8 @@ import Home from './Pages/Home/Home';
 import ProductDetails from "./Pages/ProductDetails/ProductDetails";
 import Cart from "./Pages/Cart/Cart";
 import Notfound from "./Pages/Error/Error";
-import { CartProvider } from "./Context/cartContext";
 import Products from "./Pages/Products/Products";
+import CartContextProvider from "./Context/cartContext";
 
 const routes = createBrowserRouter([
   {
@@ -34,10 +34,10 @@ const client = new QueryClient();
 export default function App() {
   return (
     <QueryClientProvider client={client}>
-      <CartProvider>
+      <CartContextProvider>
         <RouterProvider router={routes} />
         <ToastContainer position="top-right" />
-      </CartProvider>
+      </CartContextProvider>
     </QueryClientProvider>
   );
 }

@@ -17,8 +17,7 @@ export default function ProductDetails() {
   const [loadingProduct, setLoadingProduct] = useState(true);
   const [loadingRelated, setLoadingRelated] = useState(false);
 
-  const { cart, addToCart } = useCart();
-
+  const { cart, getaddToCart } = useCart();
   useEffect(() => {
     async function fetchProduct() {
       setLoadingProduct(true);
@@ -35,8 +34,9 @@ export default function ProductDetails() {
   }, [id]);
 
   useEffect(() => {
-    async function fetchRelated() {
-      if (!product || !product.category) return;
+    if (!product || !product.category) return;
+
+    const fetchRelated = async () => {
       setLoadingRelated(true);
       try {
         const { data } = await axios.get(
@@ -49,13 +49,13 @@ export default function ProductDetails() {
       } finally {
         setLoadingRelated(false);
       }
-    }
+    };
 
     fetchRelated();
-  }, [product]);
+  }, [product?.category]);
 
   const handleAddToCart = () => {
-    addToCart(product.id, 1);
+    getaddToCart(product.id, 1);
     toast.success("Product added to cart!");
   };
 
@@ -100,7 +100,10 @@ export default function ProductDetails() {
                 )}
               </div>
               {/* Add To Cart */}
-              <button className="flex items-center justify-center gap-2 bg-bgColor hover:bg-hoverColor text-white py-2 rounded-lg font-semibold transition duration-300 mt-4" onClick={handleAddToCart}>
+              <button
+                className="flex items-center justify-center gap-2 bg-bgColor hover:bg-hoverColor text-white py-2 rounded-lg font-semibold transition duration-300 mt-4"
+                onClick={handleAddToCart}
+              >
                 Add To Cart
                 <ShoppingCart className="w-5 h-5" />
               </button>

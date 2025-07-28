@@ -1,141 +1,124 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
 import axios from "axios";
+import React, { createContext, useEffect, useState, useCallback, useMemo, useContext } from "react";
 import { toast } from "react-toastify";
 
-const CartContext = createContext();
-const userId = 1;
+export const CartContext = createContext(null);
 
-export function CartProvider({ children }) {
+export default function CartContextProvider({ children }) {
   const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [disabled, setDisabled] = useState(false);
 
-  const saveToLocalStorage = (data) => {
-    try {
-      localStorage.setItem("cart", JSON.stringify(data));
-    } catch (e) {
-      console.error("❌ Failed to save cart", e);
-    }
-  };
+  const saveToLocalStorage = useCallback((data) => {
+    localStorage.setItem("cart", JSON.stringify(data));
+  }, []);
 
-  const loadFromLocalStorage = () => {
-    try {
-      const data = localStorage.getItem("cart");
-      return data ? JSON.parse(data) : null;
-    } catch (e) {
-      console.error("❌ Failed to load cart", e);
-      return null;
-    }
-  };
+  const loadFromLocalStorage = useCallback(() => {
+    const data = localStorage.getItem("cart");
+    return data ? JSON.parse(data) : [];
+  }, []);
 
-  const getLoggedCart = async () => {
+  const getLogedCart = useCallback(async () => {
     setLoading(true);
     try {
       const localCart = loadFromLocalStorage();
-      if (localCart) {
-        setCart(localCart);
-        setLoading(false);
-        return;
-      }
-
-      const { data } = await axios.get("https://fakestoreapi.com/carts");
-      const userCart = data.find((cart) => cart.userId === userId);
-
-      if (userCart) {
-        const productsWithDetails = await Promise.all(
-          userCart.products.map(async (item) => {
-            const res = await axios.get(
-              `https://fakestoreapi.com/products/${item.productId}`
-            );
-            return {
-              ...item,
-              product: res.data,
-            };
-          })
-        );
-        setCart(productsWithDetails);
-        saveToLocalStorage(productsWithDetails);
-      } else {
-        setCart([]);
-      }
+      setCart(localCart);
     } catch (error) {
       console.error("❌ Error fetching cart:", error);
+      setCart([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadFromLocalStorage]);
 
-  const addToCart = async (productId, quantity = 1) => {
-    const loadingToast = toast.loading("Adding product...");
+  const getaddToCart = useCallback(async (productId, quantity = 1) => {
     setLoading(true);
+    const loadingToast = toast.loading("Adding product...");
     try {
-      const res = await axios.get(
-        `https://fakestoreapi.com/products/${productId}`
-      );
+      const res = await axios.get(`https://fakestoreapi.com/products/${productId}`);
 
-      const existingItem = cart.find((item) => item.productId === productId);
-      let updatedCart;
+      setCart((prevCart) => {
+        const existingItem = prevCart.find(item => item.productId === productId);
+        let updatedCart;
 
-      if (existingItem) {
-        const newQuantity = existingItem.quantity + quantity;
-        updatedCart = cart.map((item) =>
-          item.productId === productId
-            ? { ...item, quantity: newQuantity }
-            : item
-        );
-        toast.success(`🔄 Increased quantity to ${newQuantity}`);
-      } else {
-        const newItem = {
-          productId,
-          quantity,
-          product: res.data,
-        };
-        updatedCart = [...cart, newItem];
-        toast.success(`✅ Added ${quantity} item(s)`);
-      }
+        if (existingItem) {
+          const newQuantity = existingItem.quantity + quantity;
+          updatedCart = prevCart.map(item =>
+            item.productId === productId ? { ...item, quantity: newQuantity } : item
+          );
+          toast.success(`🔄 Increased quantity to ${newQuantity}`);
+        } else {
+          const newItem = { productId, quantity, product: res.data };
+          updatedCart = [...prevCart, newItem];
+          toast.success(`✅ Added ${quantity} item to cart`);
+        }
 
-      setCart(updatedCart);
-      saveToLocalStorage(updatedCart);
+        saveToLocalStorage(updatedCart);
+        return updatedCart;
+      });
     } catch (error) {
-      console.error("❌ Error adding to cart:", error);
-      toast.error("Error adding product");
+      console.error("Error adding to cart:", error);
+      toast.error("❌ Error adding product");
     } finally {
       toast.dismiss(loadingToast);
       setLoading(false);
     }
-  };
+  }, [saveToLocalStorage]);
 
-  const removeItem = (productId) => {
-    const updatedCart = cart.filter((item) => item.productId !== productId);
-    setCart(updatedCart);
-    saveToLocalStorage(updatedCart);
-    toast.success("🗑️ Product removed from cart");
-  };
+  const removeItemcart = useCallback((productId) => {
+    const loadingToast = toast.loading("Removing item...");
+    setTimeout(() => {
+      setCart((prevCart) => {
+        const updatedCart = prevCart.filter(item => item.productId !== productId);
+        saveToLocalStorage(updatedCart);
+        toast.dismiss(loadingToast);
+        toast.success("Product removed from cart");
+        return updatedCart;
+      });
+    }, 500);
+  }, [saveToLocalStorage]);
 
-  const updateCartItem = (productId, quantity) => {
-    if (quantity < 1) return;
-    setDisabled(true);
-    const updatedCart = cart.map((item) =>
-      item.productId === productId ? { ...item, quantity } : item
-    );
-    setCart(updatedCart);
-    saveToLocalStorage(updatedCart);
-    toast.success(`✅ Quantity updated to ${quantity}`);
-    setTimeout(() => setDisabled(false), 300);
-  };
-
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCart([]);
     saveToLocalStorage([]);
-    toast.info("🧹 Cart cleared");
-  };
+    toast.success("🧹 Cart cleared");
+  }, [saveToLocalStorage]);
+
+  const updateCartItem = useCallback((productId, quantity) => {
+    if (quantity < 1) return;
+    setDisabled(true);
+
+    setCart((prevCart) => {
+      const updatedCart = prevCart.map(item =>
+        item.productId === productId ? { ...item, quantity } : item
+      );
+      saveToLocalStorage(updatedCart);
+      toast.success(`✅ Quantity updated to ${quantity}`);
+      return updatedCart;
+    });
+
+    setTimeout(() => {
+      setDisabled(false);
+    }, 300);
+  }, [saveToLocalStorage]);
 
   useEffect(() => {
-    getLoggedCart();
-  }, []);
+    getLogedCart();
+  }, [getLogedCart]);
+
+  const contextValue = useMemo(() => ({
+    cart,
+    loading,
+    disabled,
+    getaddToCart,
+    removeItemcart,
+    clearCart,
+    updateCartItem,
+    getLogedCart,
+  }), [cart, loading, disabled, getaddToCart, removeItemcart, clearCart, updateCartItem, getLogedCart]);
 
   return (
-    <CartContext.Provider value={{ cart, loading, disabled, addToCart, removeItemcart: removeItem, updateCartItem, clearCart }} >
+    <CartContext.Provider value={contextValue}>
       {children}
     </CartContext.Provider>
   );
