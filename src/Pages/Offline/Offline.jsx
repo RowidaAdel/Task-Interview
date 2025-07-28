@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import offline from '../../assets/images/offline.png';
+import offline from '../../assets/Images/offline.png';
 import { Helmet } from 'react-helmet';
 
 export default function Offline() {
